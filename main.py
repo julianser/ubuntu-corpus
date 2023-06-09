@@ -33,15 +33,15 @@ def qs(s):
 
 def commit(con, date, time, sender, recipient, message):
     global id
-    YYYY = int(date[0:4])
+    YYYY = int(date[:4])
     MM = int(date[5:7])
     DD = int(date[8:])
-    hh = int(time[0:2])
+    hh = int(time[:2])
     mm = int(time[3:])
     if USE_DB:
         dt = psycopg2.Timestamp(YYYY, MM, DD, hh, mm, 00)
         cur = con.cursor()
-        sql = "INSERT INTO messages (timestamp, sender, recipient, message) VALUES (%s, %s, %s, %s)" % (dt, qs(sender), qs(recipient) if recipient else "''", qs(message))
+        sql = f"""INSERT INTO messages (timestamp, sender, recipient, message) VALUES ({dt}, {qs(sender)}, {qs(recipient) if recipient else "''"}, {qs(message)})"""
         con.cursor().execute(sql)
     else:
         dt = "%d-%d-%d %d:%d:00" % (YYYY, MM, DD, hh, mm)
