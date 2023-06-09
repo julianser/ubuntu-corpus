@@ -77,9 +77,7 @@ class LogParser(object):
                 return s.decode('cp1252', 'replace')
 
     def check(self, s):
-        if len(s) == 0:
-            return True
-        return self.d.check(s)
+        return True if len(s) == 0 else self.d.check(s)
 
     def get_target(self, text):
         m = self.TARGET_REGEXP.match(text)
@@ -96,15 +94,13 @@ class LogParser(object):
             if not line:
                 continue
 
-            m = self.TIME_REGEXP.match(line)
-            if m:
+            if m := self.TIME_REGEXP.match(line):
                 time = self.decode(m.group(1))
                 line = line[len(m.group(0)):]
             else:
                 time = None
 
-            m = self.NICK_REGEXP.match(line)
-            if m:
+            if m := self.NICK_REGEXP.match(line):
                 line = line.replace('\t', ' ')
                 nick = self.decode(m.group(1))
                 text = self.decode(line[len(m.group(0)):])
@@ -117,14 +113,12 @@ class LogParser(object):
                 yield time, self.JOIN, self.decode(line)
             elif self.PART_REGEXP.match(line):
                 yield time, self.PART, self.decode(line)
+            elif m := self.NICK_CHANGE_REGEXP.match(line):
+                oldnick = m.group(1)
+                newnick = m.group(2)
+                line = self.decode(line)
+                yield time, self.NICKCHANGE, (line, oldnick, newnick)
+            elif self.SERVMSG_REGEXP.match(line):
+                yield time, self.SERVER, self.decode(line)
             else:
-                m = self.NICK_CHANGE_REGEXP.match(line)
-                if m:
-                    oldnick = m.group(1)
-                    newnick = m.group(2)
-                    line = self.decode(line)
-                    yield time, self.NICKCHANGE, (line, oldnick, newnick)
-                elif self.SERVMSG_REGEXP.match(line):
-                    yield time, self.SERVER, self.decode(line)
-                else:
-                    yield time, self.OTHER, self.decode(line)
+                yield time, self.OTHER, self.decode(line)
